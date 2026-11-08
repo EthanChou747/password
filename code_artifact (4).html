@@ -1,0 +1,785 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>密碼大冒險：拯救企鵝大作戰！</title>
+  <!-- 引入 Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- 引入 FontAwesome 圖示 -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- 引入可愛圓潤字體 -->
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&family=Noto+Sans+TC:wght@400;700;900&display=swap" rel="stylesheet">
+  
+  <style>
+    :root {
+      --c-bg: #E0F2FE;
+      --c-border: #1E293B;
+      --c-bao: #FCA5A5; /* 粉紅 */
+      --c-leo: #BAE6FD; /* 粉藍 */
+      --c-mia: #A7F3D0; /* 粉綠 */
+    }
+
+    body {
+      font-family: 'Noto Sans TC', 'Fredoka', sans-serif;
+      background-color: var(--c-bg);
+      background-image: radial-gradient(#CBD5E1 2px, transparent 2px);
+      background-size: 30px 30px;
+      color: var(--c-border);
+      user-select: none;
+    }
+
+    /* Chunky UI Style - 粗邊框與立體陰影 */
+    .chunky-border {
+      border: 4px solid var(--c-border);
+      box-shadow: 4px 4px 0px 0px var(--c-border);
+    }
+    
+    .chunky-btn {
+      border: 3px solid var(--c-border);
+      box-shadow: 0px 4px 0px 0px var(--c-border);
+      transition: all 0.1s ease;
+    }
+    
+    .chunky-btn:active {
+      transform: translateY(4px);
+      box-shadow: 0px 0px 0px 0px var(--c-border);
+    }
+
+    .chunky-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: 0px 4px 0px 0px var(--c-border);
+    }
+
+    /* 對話氣泡的尾巴 */
+    .speech-bubble::after {
+      content: '';
+      position: absolute;
+      bottom: -15px;
+      left: 50%;
+      transform: translateX(-50%);
+      border-width: 15px 15px 0;
+      border-style: solid;
+      border-color: #FFFFFF transparent;
+      display: block;
+      width: 0;
+      z-index: 10;
+    }
+    .speech-bubble::before {
+      content: '';
+      position: absolute;
+      bottom: -21px;
+      left: 50%;
+      transform: translateX(-50%);
+      border-width: 19px 19px 0;
+      border-style: solid;
+      border-color: var(--c-border) transparent;
+      display: block;
+      width: 0;
+      z-index: 9;
+    }
+
+    /* 角色動畫與動嘴效果 */
+    @keyframes bounce-body {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-15px); }
+    }
+    @keyframes lip-sync {
+      0%, 100% { transform: scaleY(1); }
+      50% { transform: scaleY(3.5); }
+    }
+
+    .char-container {
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      transform-origin: bottom center;
+    }
+    
+    .is-active {
+      transform: scale(1.15);
+      z-index: 20;
+    }
+    
+    .is-active svg {
+      animation: bounce-body 0.4s infinite ease-in-out;
+    }
+    
+    .is-active .mouth {
+      animation: lip-sync 0.15s infinite;
+      transform-origin: center;
+      transform-box: fill-box;
+    }
+
+    .is-inactive {
+      transform: scale(0.85);
+      opacity: 0.6;
+      filter: grayscale(20%);
+    }
+
+    /* 隱藏捲軸但可捲動 */
+    ::-webkit-scrollbar {
+      width: 8px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #F1F5F9;
+      border-left: 2px solid var(--c-border);
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #94A3B8;
+      border: 2px solid var(--c-border);
+      border-radius: 4px;
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col items-center py-6 px-4">
+
+  <!-- 全域訊息提示 (Toast) -->
+  <div id="toast-container" class="fixed top-4 left-1/2 transform -translate-x-1/2 z-50 hidden">
+    <div id="toast-msg" class="bg-yellow-300 chunky-border rounded-xl px-6 py-3 font-bold text-lg flex items-center gap-3">
+      <i class="fa-solid fa-bell"></i>
+      <span>提示訊息</span>
+    </div>
+  </div>
+
+  <!-- 應用程式主容器 -->
+  <main class="w-full max-w-4xl bg-white chunky-border rounded-3xl overflow-hidden flex flex-col h-[90vh]">
+    
+    <!-- 頂部導覽 -->
+    <header class="bg-yellow-400 border-b-4 border-[var(--c-border)] p-4 flex flex-col sm:flex-row items-center justify-between gap-4 shrink-0">
+      <div class="flex items-center gap-3">
+        <div class="w-12 h-12 bg-white rounded-full chunky-border flex items-center justify-center text-2xl">
+          🐧
+        </div>
+        <div>
+          <h1 class="text-xl sm:text-2xl font-black text-white" style="text-shadow: 2px 2px 0 var(--c-border), -2px -2px 0 var(--c-border), 2px -2px 0 var(--c-border), -2px 2px 0 var(--c-border);">
+            密碼大冒險：拯救企鵝大作戰
+          </h1>
+          <p class="text-sm font-bold bg-white text-gray-800 px-2 py-0.5 rounded-full inline-block border-2 border-gray-800 mt-1">
+            資安防護動畫配音室 🎙️
+          </p>
+        </div>
+      </div>
+
+      <div class="flex gap-2">
+        <button id="tab-studio" onclick="switchTab('studio')" class="chunky-btn bg-white px-4 py-2 rounded-xl font-bold flex items-center gap-2 text-sm">
+          <i class="fa-solid fa-list-check text-blue-500"></i> 劇本配音區
+        </button>
+        <button id="tab-theater" onclick="switchTab('theater')" class="chunky-btn bg-purple-300 px-4 py-2 rounded-xl font-bold flex items-center gap-2 text-sm opacity-60">
+          <i class="fa-solid fa-film text-purple-900"></i> 動畫放映室
+        </button>
+      </div>
+    </header>
+
+    <!-- 內容區域 -->
+    <div class="flex-1 overflow-hidden relative bg-blue-50">
+      
+      <!-- ========================================== -->
+      <!-- 視圖 1: 劇本配音區 (Studio)                  -->
+      <!-- ========================================== -->
+      <section id="view-studio" class="absolute inset-0 overflow-y-auto p-4 sm:p-6 space-y-4">
+        
+        <div class="bg-white chunky-border rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-4 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI4IiBoZWlnaHQ9IjgiPgo8cmVjdCB3aWR0aD0iOCIgaGVpZ2h0PSI4IiBmaWxsPSIjZmZmIj48L3JlY3Q+CjxjaXJjbGUgY3g9IjMiIGN5PSIzIiByPSIxIiBmaWxsPSIjZTElZTElZTEiPjwvY2lyY2xlPgo8L3N2Zz4=')]">
+          <div>
+            <h2 class="font-black text-lg">📝 錄製你的專屬卡通配音！</h2>
+            <p class="text-sm font-bold text-gray-600 mt-1">按照順序為阿豪、小明和小美配音。沒有麥克風也可以點擊「🤖 AI」自動生成喔！</p>
+          </div>
+          <button onclick="autoFillAllTTS()" class="chunky-btn bg-green-400 text-white font-black px-4 py-2 rounded-xl shrink-0 flex items-center gap-2">
+            <i class="fa-solid fa-wand-magic-sparkles"></i> 一鍵全部AI配音
+          </button>
+        </div>
+
+        <!-- 劇本列表容器 -->
+        <div id="script-list" class="space-y-3 pb-6">
+          <!-- 透過 JS 動態生成 -->
+        </div>
+
+        <div class="flex justify-center pb-8 pt-4">
+          <button onclick="goToTheater()" class="chunky-btn bg-pink-400 text-white text-xl font-black px-8 py-4 rounded-2xl flex items-center gap-3 animate-pulse">
+            <i class="fa-solid fa-play"></i> 播放完整動畫！
+          </button>
+        </div>
+      </section>
+
+      <!-- ========================================== -->
+      <!-- 視圖 2: 動畫放映室 (Theater)               -->
+      <!-- ========================================== -->
+      <section id="view-theater" class="absolute inset-0 hidden flex-col">
+        
+        <!-- 卡通舞台區 -->
+        <div class="flex-1 bg-gradient-to-b from-sky-300 to-sky-100 relative overflow-hidden flex flex-col justify-end">
+          
+          <!-- 背景裝飾物 -->
+          <div class="absolute top-4 left-8 text-6xl opacity-80">☁️</div>
+          <div class="absolute top-12 right-12 text-5xl opacity-60">☁️</div>
+          <div class="absolute top-6 right-32 text-4xl animate-spin" style="animation-duration: 20s;">☀️</div>
+
+          <!-- 對話氣泡 (絕對定位於上方) -->
+          <div class="absolute top-8 left-0 right-0 flex justify-center px-4 z-30 transition-opacity duration-300" id="bubble-container" style="opacity: 0;">
+            <div class="speech-bubble bg-white chunky-border rounded-3xl p-4 sm:p-6 max-w-xl w-full text-center relative">
+              <div id="bubble-name" class="inline-block px-3 py-1 rounded-full text-xs font-black mb-2 text-white bg-gray-800 border-2 border-gray-800 absolute -top-4 left-1/2 transform -translate-x-1/2">
+                角色名字
+              </div>
+              <p id="bubble-text" class="text-xl sm:text-2xl font-black leading-snug">
+                台詞內容
+              </p>
+              <div id="bubble-mood" class="absolute -right-4 -bottom-4 text-4xl">😲</div>
+            </div>
+          </div>
+
+          <!-- 角色站在地板上 -->
+          <div class="relative z-20 flex justify-around items-end w-full px-4 sm:px-12 pb-2 h-64">
+            
+            <!-- 角色：阿豪 (Bao) -->
+            <div id="stage-char-bao" class="char-container w-28 sm:w-36 flex flex-col items-center">
+              <svg viewBox="0 0 100 120" class="w-full drop-shadow-xl overflow-visible">
+                <!-- 身體 -->
+                <path d="M20,120 C20,70 80,70 80,120 Z" fill="var(--c-bao)" stroke="var(--c-border)" stroke-width="4"/>
+                <!-- 頭部 -->
+                <circle cx="50" cy="50" r="40" fill="#FFE4E1" stroke="var(--c-border)" stroke-width="4"/>
+                <!-- 頭髮 (短碎髮) -->
+                <path d="M10,50 Q30,10 50,10 Q70,10 90,50 Q70,25 50,30 Q30,25 10,50 Z" fill="#8B4513" stroke="var(--c-border)" stroke-width="4"/>
+                <!-- 眼睛 (常常流淚/緊張) -->
+                <circle cx="35" cy="55" r="5" fill="var(--c-border)"/>
+                <circle cx="65" cy="55" r="5" fill="var(--c-border)"/>
+                <path d="M25,45 Q35,40 45,48 M55,48 Q65,40 75,45" stroke="var(--c-border)" stroke-width="3" fill="none"/> <!-- 眉毛 -->
+                <!-- 嘴巴 -->
+                <ellipse class="mouth" cx="50" cy="75" rx="8" ry="3" fill="#D2691E" stroke="var(--c-border)" stroke-width="2"/>
+                <!-- 汗水/眼淚裝飾 -->
+                <path id="bao-tear" d="M20,60 Q25,75 20,80 Q15,75 20,60 Z" fill="#60A5FA" class="animate-pulse"/>
+              </svg>
+              <div class="mt-2 bg-white chunky-border px-3 py-1 rounded-full text-xs font-black">阿豪</div>
+            </div>
+
+            <!-- 角色：小明 (Leo) -->
+            <div id="stage-char-leo" class="char-container w-28 sm:w-36 flex flex-col items-center">
+              <svg viewBox="0 0 100 120" class="w-full drop-shadow-xl overflow-visible">
+                <!-- 身體 -->
+                <path d="M25,120 C25,70 75,70 75,120 Z" fill="var(--c-leo)" stroke="var(--c-border)" stroke-width="4"/>
+                <line x1="25" y1="100" x2="75" y2="100" stroke="var(--c-border)" stroke-width="3"/>
+                <line x1="25" y1="110" x2="75" y2="110" stroke="var(--c-border)" stroke-width="3"/>
+                <!-- 頭部 -->
+                <circle cx="50" cy="50" r="38" fill="#FFF0F5" stroke="var(--c-border)" stroke-width="4"/>
+                <!-- 頭髮 (聰明分線) -->
+                <path d="M12,50 C12,15 88,15 88,50 C80,30 60,20 40,25 C25,30 15,40 12,50 Z" fill="#4B0082" stroke="var(--c-border)" stroke-width="4"/>
+                <!-- 眼鏡 -->
+                <circle cx="33" cy="52" r="10" fill="none" stroke="var(--c-border)" stroke-width="3"/>
+                <circle cx="67" cy="52" r="10" fill="none" stroke="var(--c-border)" stroke-width="3"/>
+                <line x1="43" y1="52" x2="57" y2="52" stroke="var(--c-border)" stroke-width="3"/>
+                <!-- 眼睛 -->
+                <circle cx="33" cy="52" r="3" fill="var(--c-border)"/>
+                <circle cx="67" cy="52" r="3" fill="var(--c-border)"/>
+                <!-- 嘴巴 -->
+                <ellipse class="mouth" cx="50" cy="73" rx="6" ry="2" fill="#DC143C" stroke="var(--c-border)" stroke-width="2"/>
+              </svg>
+              <div class="mt-2 bg-white chunky-border px-3 py-1 rounded-full text-xs font-black">小明</div>
+            </div>
+
+            <!-- 角色：小美 (Mia) -->
+            <div id="stage-char-mia" class="char-container w-28 sm:w-36 flex flex-col items-center">
+              <svg viewBox="0 0 100 120" class="w-full drop-shadow-xl overflow-visible">
+                <!-- 身體 -->
+                <path d="M20,120 L50,75 L80,120 Z" fill="var(--c-mia)" stroke="var(--c-border)" stroke-width="4"/>
+                <!-- 雙馬尾 -->
+                <circle cx="15" cy="40" r="12" fill="#000000" stroke="var(--c-border)" stroke-width="3"/>
+                <circle cx="85" cy="40" r="12" fill="#000000" stroke="var(--c-border)" stroke-width="3"/>
+                <!-- 頭部 -->
+                <circle cx="50" cy="50" r="35" fill="#FAFAD2" stroke="var(--c-border)" stroke-width="4"/>
+                <!-- 瀏海 -->
+                <path d="M15,50 Q50,20 85,50 Q80,35 50,35 Q20,35 15,50 Z" fill="#000000" stroke="var(--c-border)" stroke-width="4"/>
+                <!-- 眼睛 (自信) -->
+                <ellipse cx="36" cy="55" rx="4" ry="6" fill="var(--c-border)"/>
+                <ellipse cx="64" cy="55" rx="4" ry="6" fill="var(--c-border)"/>
+                <path d="M30,48 L42,50 M70,48 L58,50" stroke="var(--c-border)" stroke-width="3" fill="none"/> <!-- 銳利眉毛 -->
+                <!-- 嘴巴 -->
+                <ellipse class="mouth" cx="50" cy="72" rx="5" ry="3" fill="#C71585" stroke="var(--c-border)" stroke-width="2"/>
+              </svg>
+              <div class="mt-2 bg-white chunky-border px-3 py-1 rounded-full text-xs font-black">小美</div>
+            </div>
+
+          </div>
+          <!-- 舞台地板 -->
+          <div class="h-8 bg-green-400 border-t-4 border-[var(--c-border)] w-full absolute bottom-0 z-10"></div>
+        </div>
+
+        <!-- 放映控制列 -->
+        <div class="bg-white chunky-border m-4 p-4 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div class="w-full sm:w-1/2">
+            <div class="text-sm font-black mb-1 text-gray-600 flex justify-between">
+              <span>放映進度</span>
+              <span id="play-progress-text">0 / 10</span>
+            </div>
+            <div class="w-full h-4 bg-gray-200 rounded-full chunky-border overflow-hidden">
+              <div id="play-progress-bar" class="h-full bg-pink-400 w-0 transition-all duration-300"></div>
+            </div>
+          </div>
+          
+          <div class="flex gap-2">
+            <button id="btn-theater-play" onclick="toggleTheaterPlay()" class="chunky-btn bg-pink-400 text-white font-black px-6 py-2 rounded-xl flex items-center gap-2">
+              <i class="fa-solid fa-play"></i> 開始放映
+            </button>
+            <button onclick="resetTheater()" class="chunky-btn bg-gray-200 text-gray-700 font-black px-4 py-2 rounded-xl">
+              <i class="fa-solid fa-rotate-left"></i> 重置
+            </button>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </main>
+
+  <!-- ========================================== -->
+  <!-- 彈出視窗：錄音介面 (Record Modal)            -->
+  <!-- ========================================== -->
+  <div id="modal-record" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white chunky-border rounded-3xl w-full max-w-md p-6 relative flex flex-col items-center text-center">
+      <button onclick="closeRecordModal()" class="absolute top-4 right-4 w-10 h-10 bg-red-400 chunky-btn rounded-full text-white font-black text-xl flex items-center justify-center">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+
+      <div id="record-char-badge" class="px-4 py-1 rounded-full text-sm font-black text-white bg-blue-500 chunky-border mb-4">
+        準備錄音
+      </div>
+      
+      <p id="record-line-text" class="text-xl sm:text-2xl font-black mb-6 leading-relaxed bg-gray-100 p-4 rounded-xl chunky-border w-full">
+        台詞內容
+      </p>
+
+      <div class="flex items-center gap-6 mb-6">
+        <!-- 錄音按鈕 -->
+        <button id="btn-modal-mic" onclick="toggleRecording()" class="w-20 h-20 rounded-full chunky-btn bg-red-500 text-white text-3xl flex items-center justify-center transition-all duration-200">
+          <i id="icon-modal-mic" class="fa-solid fa-microphone"></i>
+        </button>
+        <!-- AI配音按鈕 -->
+        <button onclick="useTTSForCurrent()" class="w-16 h-16 rounded-full chunky-btn bg-green-400 text-white text-2xl flex items-center justify-center" title="使用AI配音">
+          <i class="fa-solid fa-robot"></i>
+        </button>
+      </div>
+
+      <div id="record-status" class="font-bold text-gray-500 mb-2 font-mono text-lg">00:00</div>
+      <p class="text-sm font-bold text-gray-400">點擊紅色麥克風開始/停止錄音</p>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- 彈出視窗：密碼安全大師徽章 (Summary Modal)   -->
+  <!-- ========================================== -->
+  <div id="modal-summary" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-yellow-100 chunky-border border-yellow-500 rounded-3xl w-full max-w-lg p-6 sm:p-8 relative text-center">
+      <div class="text-6xl mb-4 animate-bounce">🏆</div>
+      <h2 class="text-3xl font-black text-yellow-600 mb-2" style="text-shadow: 2px 2px 0 #FFF;">恭喜獲得密碼大師徽章！</h2>
+      <p class="font-bold text-gray-700 mb-6">你已經學會如何保護自己的帳號了！請記住「密碼三不原則」：</p>
+      
+      <div class="space-y-3 text-left bg-white p-5 rounded-2xl chunky-border mb-6">
+        <div class="flex items-start gap-3">
+          <div class="text-red-500 text-xl font-black">❌</div>
+          <div><span class="font-black">不要包含個人資料：</span>像是生日、身分證字號或電話號碼。</div>
+        </div>
+        <div class="flex items-start gap-3">
+          <div class="text-red-500 text-xl font-black">❌</div>
+          <div><span class="font-black">拒絕懶人密碼：</span>123456、password、qwer 都是駭客最愛！</div>
+        </div>
+        <div class="flex items-start gap-3">
+          <div class="text-green-500 text-xl font-black">✅</div>
+          <div><span class="font-black">超強密碼配方：</span>長度至少8位，包含英文大小寫、數字和特殊符號（例如：Pizza_No.1）。</div>
+        </div>
+      </div>
+
+      <button onclick="closeSummaryModal()" class="chunky-btn bg-pink-400 text-white font-black text-xl px-8 py-3 rounded-xl w-full">
+        我知道了，馬上去改密碼！
+      </button>
+    </div>
+  </div>
+
+  <!-- JavaScript 邏輯 -->
+  <script>
+    /* ----------------------------------
+       1. 劇本資料 (10 句)
+    ----------------------------------- */
+    const SCRIPT_DATA = [
+      { id: 1, char: 'bao', name: '阿豪', color: 'bg-red-400', text: '不好了！我的魔法企鵝帳號被盜了！', mood: '😭' },
+      { id: 2, char: 'leo', name: '小明', color: 'bg-blue-400', text: '什麼？你的密碼是不是設太簡單啦？', mood: '😲' },
+      { id: 3, char: 'bao', name: '阿豪', color: 'bg-red-400', text: '不會啊，我設我的生日加上 123456，超難猜的！', mood: '😤' },
+      { id: 4, char: 'mia', name: '小美', color: 'bg-teal-400', text: '天啊，這是駭客眼中的「超級爛密碼」第一名好嗎！', mood: '🤦‍♀️' },
+      { id: 5, char: 'leo', name: '小明', color: 'bg-blue-400', text: '像我就很聰明，我的密碼是「password」！', mood: '😎' },
+      { id: 6, char: 'mia', name: '小美', color: 'bg-teal-400', text: '那個是第二名爛...你們兩個根本是送分題！', mood: '😒' },
+      { id: 7, char: 'bao', name: '阿豪', color: 'bg-red-400', text: '那怎麼辦？企鵝要不回來了嗎？', mood: '😰' },
+      { id: 8, char: 'mia', name: '小美', color: 'bg-teal-400', text: '聽好，密碼要夠長，最好有大小寫英文、數字加特殊符號！', mood: '🦸‍♀️' },
+      { id: 9, char: 'leo', name: '小明', color: 'bg-blue-400', text: '那...「Pizza_No.1」這種可以嗎？', mood: '🤔' },
+      { id: 10, char: 'mia', name: '小美', color: 'bg-teal-400', text: '沒錯！好記又安全！現在快去重設密碼吧！', mood: '✨' }
+    ];
+
+    /* ----------------------------------
+       2. 狀態管理
+    ----------------------------------- */
+    const audioData = {}; // 儲存格式: { type: 'blob'|'tts', url: blobUrl }
+    let currentRecordingIndex = null;
+    let mediaRecorder = null;
+    let audioChunks = [];
+    let recStartTime = 0;
+    let recInterval = null;
+
+    let isTheaterPlaying = false;
+    let currentPlayIndex = 0;
+    let activeAudioElement = null;
+    let playTimeoutId = null;
+
+    /* ----------------------------------
+       3. 初始化 UI
+    ----------------------------------- */
+    window.onload = () => {
+      renderStudioList();
+    };
+
+    function renderStudioList() {
+      const listContainer = document.getElementById('script-list');
+      listContainer.innerHTML = '';
+
+      SCRIPT_DATA.forEach((line, index) => {
+        const hasAudio = !!audioData[index];
+        const statusHTML = hasAudio 
+          ? `<span class="bg-green-100 text-green-700 px-2 py-0.5 rounded text-xs font-bold border-2 border-green-700">✓ 已配音 (${audioData[index].type})</span>`
+          : `<span class="bg-gray-100 text-gray-500 px-2 py-0.5 rounded text-xs font-bold border-2 border-gray-300">尚未配音</span>`;
+
+        const card = document.createElement('div');
+        card.className = `bg-white chunky-border rounded-2xl p-3 sm:p-4 flex flex-col sm:flex-row gap-4 items-start sm:items-center ${hasAudio ? 'border-green-500 shadow-[4px_4px_0_0_#22C55E]' : ''}`;
+        card.innerHTML = `
+          <div class="flex items-start gap-3 flex-1">
+            <div class="${line.color} text-white font-black w-8 h-8 rounded-full flex items-center justify-center chunky-border shrink-0 mt-1">
+              ${line.id}
+            </div>
+            <div>
+              <div class="flex items-center gap-2 mb-1">
+                <span class="font-black text-sm px-2 rounded-full ${line.color} text-white border-2 border-[var(--c-border)]">${line.name}</span>
+                ${statusHTML}
+              </div>
+              <p class="font-bold text-gray-800">${line.text} <span class="text-xl">${line.mood}</span></p>
+            </div>
+          </div>
+          
+          <div class="flex gap-2 w-full sm:w-auto shrink-0 justify-end">
+            <button onclick="openRecordModal(${index})" class="chunky-btn bg-yellow-300 px-3 py-2 rounded-xl font-black text-sm flex items-center gap-1">
+              <i class="fa-solid fa-microphone"></i> 錄製
+            </button>
+            <button onclick="previewAudio(${index})" class="chunky-btn ${hasAudio ? 'bg-green-400 text-white' : 'bg-gray-200 text-gray-400'} w-10 h-10 rounded-xl flex items-center justify-center" ${!hasAudio ? 'disabled' : ''}>
+              <i class="fa-solid fa-play"></i>
+            </button>
+          </div>
+        `;
+        listContainer.appendChild(card);
+      });
+    }
+
+    // 切換頁籤
+    function switchTab(tab) {
+      if (tab === 'studio') {
+        document.getElementById('view-studio').classList.remove('hidden');
+        document.getElementById('view-theater').classList.add('hidden');
+        document.getElementById('tab-studio').classList.replace('bg-blue-300', 'bg-white');
+        document.getElementById('tab-studio').classList.remove('opacity-60');
+        document.getElementById('tab-theater').classList.replace('bg-white', 'bg-purple-300');
+        document.getElementById('tab-theater').classList.add('opacity-60');
+        pauseTheater();
+      } else {
+        document.getElementById('view-studio').classList.add('hidden');
+        document.getElementById('view-theater').classList.replace('hidden', 'flex');
+        document.getElementById('tab-theater').classList.replace('bg-purple-300', 'bg-white');
+        document.getElementById('tab-theater').classList.remove('opacity-60');
+        document.getElementById('tab-studio').classList.replace('bg-white', 'bg-blue-300');
+        document.getElementById('tab-studio').classList.add('opacity-60');
+        setupTheaterStage(-1); // 初始狀態
+      }
+    }
+
+    function goToTheater() {
+      switchTab('theater');
+      setTimeout(() => toggleTheaterPlay(), 300); // 自動開始播放
+    }
+
+    /* ----------------------------------
+       4. 錄音與 TTS 功能
+    ----------------------------------- */
+    function openRecordModal(index) {
+      currentRecordingIndex = index;
+      const line = SCRIPT_DATA[index];
+      
+      document.getElementById('record-char-badge').className = `px-4 py-1 rounded-full text-sm font-black text-white chunky-border mb-4 ${line.color}`;
+      document.getElementById('record-char-badge').innerText = `${line.name} 的台詞`;
+      document.getElementById('record-line-text').innerText = `「${line.text}」`;
+      document.getElementById('record-status').innerText = '00:00';
+      
+      document.getElementById('modal-record').classList.remove('hidden');
+    }
+
+    function closeRecordModal() {
+      if (mediaRecorder && mediaRecorder.state === 'recording') {
+        mediaRecorder.stop();
+      }
+      clearInterval(recInterval);
+      document.getElementById('modal-record').classList.add('hidden');
+      renderStudioList(); // 更新列表狀態
+    }
+
+    async function toggleRecording() {
+      const btn = document.getElementById('btn-modal-mic');
+      const icon = document.getElementById('icon-modal-mic');
+      const statusText = document.getElementById('record-status');
+
+      if (mediaRecorder && mediaRecorder.state === 'recording') {
+        // 停止錄音
+        mediaRecorder.stop();
+        btn.classList.replace('bg-gray-600', 'bg-red-500');
+        btn.classList.remove('animate-pulse');
+        icon.className = 'fa-solid fa-microphone';
+        clearInterval(recInterval);
+        showToast('✅ 錄音已儲存！');
+        setTimeout(() => closeRecordModal(), 800);
+        return;
+      }
+
+      // 開始錄音
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        mediaRecorder = new MediaRecorder(stream);
+        audioChunks = [];
+
+        mediaRecorder.ondataavailable = (e) => {
+          if (e.data.size > 0) audioChunks.push(e.data);
+        };
+
+        mediaRecorder.onstop = () => {
+          const blob = new Blob(audioChunks, { type: 'audio/webm' });
+          const url = URL.createObjectURL(blob);
+          audioData[currentRecordingIndex] = { type: 'blob', url: url };
+          stream.getTracks().forEach(track => track.stop()); // 關閉麥克風
+        };
+
+        mediaRecorder.start();
+        recStartTime = Date.now();
+        recInterval = setInterval(() => {
+          const elapsed = Math.floor((Date.now() - recStartTime) / 1000);
+          const s = String(elapsed % 60).padStart(2, '0');
+          statusText.innerText = `00:${s}`;
+        }, 1000);
+
+        btn.classList.replace('bg-red-500', 'bg-gray-600');
+        btn.classList.add('animate-pulse');
+        icon.className = 'fa-solid fa-stop';
+        statusText.innerText = '🔴 錄音中...';
+      } catch (err) {
+        showToast('⚠️ 無法存取麥克風，請檢查權限或改用 AI 配音。');
+      }
+    }
+
+    function useTTSForCurrent() {
+      audioData[currentRecordingIndex] = { type: 'tts' };
+      showToast('🤖 已設定為 AI 配音！');
+      closeRecordModal();
+    }
+
+    function autoFillAllTTS() {
+      SCRIPT_DATA.forEach((_, idx) => {
+        if (!audioData[idx]) audioData[idx] = { type: 'tts' };
+      });
+      renderStudioList();
+      showToast('✨ 已將尚未錄音的台詞全部填上 AI 配音！');
+    }
+
+    // 試聽單句
+    function previewAudio(index) {
+      if (!audioData[index]) return;
+      playLineAudio(index, () => {
+        stopLipSync();
+      }, true); // force just playback without theater UI updates
+    }
+
+    /* ----------------------------------
+       5. 放映室播放引擎與動畫
+    ----------------------------------- */
+    function setupTheaterStage(index) {
+      // 重置所有角色狀態
+      ['bao', 'leo', 'mia'].forEach(char => {
+        const el = document.getElementById(`stage-char-${char}`);
+        el.classList.remove('is-active', 'is-inactive');
+        if (index >= 0) {
+          if (SCRIPT_DATA[index].char === char) {
+            el.classList.add('is-active');
+          } else {
+            el.classList.add('is-inactive');
+          }
+        }
+      });
+
+      const bubbleContainer = document.getElementById('bubble-container');
+      
+      if (index >= 0 && index < SCRIPT_DATA.length) {
+        const line = SCRIPT_DATA[index];
+        document.getElementById('bubble-name').innerText = line.name;
+        document.getElementById('bubble-name').className = `inline-block px-4 py-1 rounded-full text-sm font-black mb-2 text-white border-2 border-[var(--c-border)] absolute -top-4 left-1/2 transform -translate-x-1/2 ${line.color}`;
+        document.getElementById('bubble-text').innerText = line.text;
+        document.getElementById('bubble-mood').innerText = line.mood;
+        bubbleContainer.style.opacity = 1;
+        
+        // 更新進度條
+        const pct = ((index + 1) / SCRIPT_DATA.length) * 100;
+        document.getElementById('play-progress-bar').style.width = `${pct}%`;
+        document.getElementById('play-progress-text').innerText = `${index + 1} / 10`;
+      } else {
+        bubbleContainer.style.opacity = 0;
+        document.getElementById('play-progress-bar').style.width = `0%`;
+        document.getElementById('play-progress-text').innerText = `0 / 10`;
+      }
+    }
+
+    function toggleTheaterPlay() {
+      const btn = document.getElementById('btn-theater-play');
+      if (isTheaterPlaying) {
+        pauseTheater();
+        btn.innerHTML = '<i class="fa-solid fa-play"></i> 繼續放映';
+        btn.classList.replace('bg-red-400', 'bg-pink-400');
+      } else {
+        isTheaterPlaying = true;
+        btn.innerHTML = '<i class="fa-solid fa-pause"></i> 暫停';
+        btn.classList.replace('bg-pink-400', 'bg-red-400');
+        if (currentPlayIndex >= SCRIPT_DATA.length) currentPlayIndex = 0;
+        playNextTheaterStep();
+      }
+    }
+
+    function pauseTheater() {
+      isTheaterPlaying = false;
+      clearTimeout(playTimeoutId);
+      if (activeAudioElement) activeAudioElement.pause();
+      if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+      stopLipSync();
+    }
+
+    function resetTheater() {
+      pauseTheater();
+      currentPlayIndex = 0;
+      setupTheaterStage(-1);
+      const btn = document.getElementById('btn-theater-play');
+      btn.innerHTML = '<i class="fa-solid fa-play"></i> 開始放映';
+      btn.classList.replace('bg-red-400', 'bg-pink-400');
+    }
+
+    function playNextTheaterStep() {
+      if (!isTheaterPlaying) return;
+
+      if (currentPlayIndex >= SCRIPT_DATA.length) {
+        // 播放完畢
+        pauseTheater();
+        document.getElementById('btn-theater-play').innerHTML = '<i class="fa-solid fa-rotate-left"></i> 重新播放';
+        document.getElementById('btn-theater-play').classList.replace('bg-red-400', 'bg-pink-400');
+        setupTheaterStage(-1); // 歸位
+        setTimeout(() => {
+          document.getElementById('modal-summary').classList.remove('hidden');
+        }, 500);
+        return;
+      }
+
+      setupTheaterStage(currentPlayIndex);
+      
+      playLineAudio(currentPlayIndex, () => {
+        if (!isTheaterPlaying) return;
+        stopLipSync();
+        // 對話間稍微停頓 0.8 秒
+        playTimeoutId = setTimeout(() => {
+          currentPlayIndex++;
+          playNextTheaterStep();
+        }, 800);
+      });
+    }
+
+    // 核心音訊播放與嘴型觸發邏輯
+    function playLineAudio(index, onEndedCallback, isPreview = false) {
+      const data = audioData[index];
+      const line = SCRIPT_DATA[index];
+      
+      if (activeAudioElement) activeAudioElement.pause();
+      if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+      stopLipSync();
+
+      // 如果未設定，自動降級為 TTS
+      const playType = data ? data.type : 'tts';
+
+      if (playType === 'blob' && data.url) {
+        activeAudioElement = new Audio(data.url);
+        if (!isPreview) triggerLipSyncByTime(line.char, 99999); // Audio 會靠 onended 停止
+        
+        activeAudioElement.onended = () => {
+          if (onEndedCallback) onEndedCallback();
+        };
+        activeAudioElement.play().catch(e => {
+          // 如果音檔有問題， fallback
+          if (onEndedCallback) onEndedCallback();
+        });
+      } else {
+        // TTS 播放
+        if ('speechSynthesis' in window) {
+          const utter = new SpeechSynthesisUtterance(line.text);
+          utter.lang = 'zh-TW';
+          // 根據角色設定聲音特性
+          if (line.char === 'bao') { utter.pitch = 1.3; utter.rate = 1.1; }
+          else if (line.char === 'leo') { utter.pitch = 0.8; utter.rate = 1.0; }
+          else if (line.char === 'mia') { utter.pitch = 1.6; utter.rate = 1.2; }
+          
+          utter.onstart = () => {
+            if (!isPreview) triggerLipSyncByTime(line.char, 99999);
+          };
+          utter.onend = () => {
+            if (onEndedCallback) onEndedCallback();
+          };
+          utter.onerror = () => {
+            if (onEndedCallback) onEndedCallback();
+          };
+          window.speechSynthesis.speak(utter);
+        } else {
+          // 不支援 TTS
+          showToast('⚠️ 瀏覽器不支援文字轉語音，直接跳過');
+          setTimeout(() => {
+            if (onEndedCallback) onEndedCallback();
+          }, 1500);
+        }
+      }
+    }
+
+    // 觸發嘴巴開合 (透過 CSS class 'is-active' 裡的動畫控制)
+    // 這裡只需要確保角色有 is-active 即可，因為 CSS 已經寫好了 mouth animation
+    function triggerLipSyncByTime(char, duration) {
+      // 由於 setupTheaterStage 已經加上了 is-active 觸發 CSS 動畫，這裡不用特別做事
+      // 若是在預覽模式 (isPreview=true)，可以動態加上 is-active
+    }
+    
+    function stopLipSync() {
+      // 停止音訊時自然會切換下一個 stage
+    }
+
+    /* ----------------------------------
+       6. 輔助功能
+    ----------------------------------- */
+    function showToast(msg) {
+      const toast = document.getElementById('toast-container');
+      const msgEl = document.getElementById('toast-msg');
+      
+      // 替換圖示與文字
+      if (msg.includes('✅')) msgEl.innerHTML = `<i class="fa-solid fa-check text-green-600"></i> <span>${msg.replace('✅','')}</span>`;
+      else if (msg.includes('⚠️')) msgEl.innerHTML = `<i class="fa-solid fa-triangle-exclamation text-red-500"></i> <span>${msg.replace('⚠️','')}</span>`;
+      else msgEl.innerHTML = `<i class="fa-solid fa-bell text-blue-500"></i> <span>${msg}</span>`;
+
+      toast.classList.remove('hidden');
+      toast.classList.add('animate-bounce');
+      
+      setTimeout(() => {
+        toast.classList.add('hidden');
+        toast.classList.remove('animate-bounce');
+      }, 2500);
+    }
+
+    function closeSummaryModal() {
+      document.getElementById('modal-summary').classList.add('hidden');
+      resetTheater();
+    }
+  </script>
+</body>
+</html>
